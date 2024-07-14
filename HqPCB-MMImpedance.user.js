@@ -2,7 +2,7 @@
 // @name                HqPCB-MMImpedance
 // @name:zh-CN          HqPCB-毫米计算阻抗
 // @namespace           https://github.com/Mehver
-// @version             1.0
+// @version             1.1
 // @description         华秋PCB阻抗计算页面本来只有mil，添加单位选择，可以切换到mm。
 // @description:zh-CN   华秋PCB阻抗计算页面本来只有mil，添加单位选择，可以切换到mm。
 // @author              https://github.com/Mehver
@@ -10,7 +10,7 @@
 // @match               https://www.hqpcb.com/quote/impedance
 // @license             MPL-2.0
 // @license             Mozilla Public License 2.0
-// @charset		          UTF-8
+// @charset		        UTF-8
 // @homepageURL         https://github.com/SynRGB/HqPCB-MMImpedance
 // @contributionURL     https://github.com/SynRGB/HqPCB-MMImpedance
 // ==/UserScript==
@@ -68,9 +68,7 @@
             const rows = item.querySelectorAll('.el-table__row');
             rows.forEach(row => {
                 const tds = row.querySelectorAll('td');
-
                 if (unit === 'mm') {
-                    // 处理 [4, 5, 6] 部分
                     [4, 5, 6].forEach(tdIndex => {
                         if (tds[tdIndex]) {
                             const div = tds[tdIndex].querySelector('div');
@@ -80,9 +78,7 @@
                             }
                         }
                     });
-
-                    // 处理 [9, 10, 11, 12] 部分
-                    [9, 10, 11, 12].forEach(tdIndex => {
+                    [9, 10, 11].forEach(tdIndex => {
                         if (tds[tdIndex]) {
                             const div = tds[tdIndex].querySelector('div > div');
                             if (div && div.innerText && div.innerText !== '/' && !isNaN(parseFloat(div.innerText))) {
@@ -92,7 +88,6 @@
                         }
                     });
                 } else {
-                    // 处理 [4, 5, 6] 部分
                     [4, 5, 6].forEach(tdIndex => {
                         if (tds[tdIndex]) {
                             const div = tds[tdIndex].querySelector('div');
@@ -102,9 +97,7 @@
                             }
                         }
                     });
-
-                    // 处理 [9, 10, 11, 12] 部分
-                    [9, 10, 11, 12].forEach(tdIndex => {
+                    [9, 10, 11].forEach(tdIndex => {
                         if (tds[tdIndex]) {
                             const div = tds[tdIndex].querySelector('div > div');
                             if (div && div.innerText && div.innerText !== '/' && !isNaN(parseFloat(div.innerText))) {
@@ -118,7 +111,17 @@
 
             // 处理表头部分，添加单位
             const firstThs = item.querySelectorAll('th');
-            [4, 5, 6, 9, 10, 11, 12].forEach(thIndex => {
+            [4, 5, 6, 11].forEach(thIndex => {
+                if (firstThs[thIndex]) {
+                    const div = firstThs[thIndex].querySelector('div');
+                    if (div && !div.innerText.includes('(')) { // 防止重复添加
+                        div.innerText = div.innerText + `\n(${unit})`;
+                    } else if (div) {
+                        div.innerText = div.innerText.replace(/\((mil|mm)\)/, `(${unit})`);
+                    }
+                }
+            });
+            [9, 10].forEach(thIndex => {
                 if (firstThs[thIndex]) {
                     const div = firstThs[thIndex].querySelector('div');
                     if (div && !div.innerText.includes('(')) { // 防止重复添加
@@ -128,10 +131,47 @@
                     }
                 }
             });
+            if (firstThs[12]) {
+                const div = firstThs[12].querySelector('div');
+                if (div && !div.innerText.includes('(')) { // 防止重复添加
+                    div.innerText = div.innerText + `\n(ohm)`;
+                }
+            }
         });
 
         // 更新表头单位
         updateTableHeaders();
+    }
+
+    /**
+     * 某些情况下原始值是mm，需要转换为mil
+     */
+    function resultReverseConverter() {
+        const listItems = document.querySelectorAll('div.impedance__list__item');
+        listItems.forEach(item => {
+            const rows = item.querySelectorAll('.el-table__row');
+            rows.forEach(row => {
+                const tds = row.querySelectorAll('td');
+                [4, 5, 6].forEach(tdIndex => {
+                    if (tds[tdIndex]) {
+                        const div = tds[tdIndex].querySelector('div');
+                        if (div && div.innerText && div.innerText !== '/' && !isNaN(parseFloat(div.innerText))) {
+                            const value = parseFloat(div.innerText);
+                            div.innerText = (value / 0.0254).toFixed(3);
+                        }
+                    }
+                });
+                [9, 10, 11].forEach(tdIndex => {
+                    if (tds[tdIndex]) {
+                        const div = tds[tdIndex].querySelector('div > div');
+                        if (div && div.innerText && div.innerText !== '/' && !isNaN(parseFloat(div.innerText))) {
+                            const value = parseFloat(div.innerText);
+                            div.innerText = (value / 0.0254).toFixed(3);
+                        }
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -244,17 +284,19 @@
         // 监听单位选择变化，重新匹配
         document.getElementById('unit-select').addEventListener('change', () => {
             resultConverter(); // 重新转换所有值
+            if (document.getElementById('unit-select').value === 'mil') {
+                resultReverseConverter();
+            }
         });
 
         // 监听按钮点击事件，重新匹配
         const button = document.querySelector("body > div.impedance > div > div.impedance__content > div.impedance__params > div > div.impedance__params__btns > div > button.el-button.el-button--primary.el-button--mini");
         if (button) {
             button.addEventListener('click', function () {
-                // 延迟一段时间以确保内容加载完成
                 setTimeout(() => {
                     resultConverter();
                     replaceInputs();
-                }, 1000);
+                }, 1500);
             });
         }
     }
