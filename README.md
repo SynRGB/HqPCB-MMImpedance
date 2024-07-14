@@ -11,4 +11,4 @@
 
 华秋PCB阻抗计算页面本来只有mil，添加单位选择，可以切换到mm。
 
-<img src="https://github.com/SynRGB/HqPCB-MMImpedance/raw/main/%23README/example.jpg" width="50%"/>
+<img src="https://github.com/SynRGB/HqPCB-MMImpedance/raw/main/%23README/example.jpg"/>
